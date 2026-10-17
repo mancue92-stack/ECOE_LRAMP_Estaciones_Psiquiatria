@@ -2,7 +2,8 @@
 
 // Cliente del backend (Apps Script o servidor simulado). Todas las respuestas son {ok, data|error}.
 var Api = (function () {
-    var TIEMPO_LIMITE_MS = 10000;
+    var LIMITE_LECTURA_MS = 15000;
+    var LIMITE_ESCRITURA_MS = 30000;
     var token = null;
 
     function baseUrl() {
@@ -24,9 +25,9 @@ var Api = (function () {
     }
 
     // Corta las peticiones colgadas para que el sondeo no se congele.
-    function conTiempoLimite(url, opciones) {
+    function conTiempoLimite(url, opciones, limiteMs) {
         var control = new AbortController();
-        var reloj = setTimeout(function () { control.abort(); }, TIEMPO_LIMITE_MS);
+        var reloj = setTimeout(function () { control.abort(); }, limiteMs);
         return fetch(url, Object.assign({ signal: control.signal }, opciones || {}))
             .catch(function (e) {
                 throw e.name === 'AbortError' ? new Error('El servidor tardó demasiado en responder.') : e;
@@ -34,17 +35,27 @@ var Api = (function () {
             .finally(function () { clearTimeout(reloj); });
     }
 
-    function leer(accion) {
-        return conTiempoLimite(baseUrl() + (baseUrl().indexOf('?') < 0 ? '?' : '&') + 'action=' + accion).then(procesar);
+    // Las lecturas no cambian nada: se reintentan una vez si falla la red. Los errores del servidor no.
+    function reintentar(fn, veces) {
+        return fn().catch(function (e) {
+            if (veces > 0 && !e.codigo) return reintentar(fn, veces - 1);
+            throw e;
+        });
     }
 
-    // text/plain evita el preflight CORS que Apps Script no responde.
+    function leer(accion) {
+        var url = baseUrl() + (baseUrl().indexOf('?') < 0 ? '?' : '&') + 'action=' + accion;
+        return reintentar(function () { return conTiempoLimite(url, null, LIMITE_LECTURA_MS).then(procesar); }, 1);
+    }
+
+    // text/plain evita el preflight CORS que Apps Script no responde. Las escrituras no se reintentan
+    // (repetir "generar" sortearía otra ronda).
     function enviar(cuerpo) {
         return conTiempoLimite(baseUrl(), {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: JSON.stringify(cuerpo)
-        }).then(procesar);
+        }, LIMITE_ESCRITURA_MS).then(procesar);
     }
 
     return {
