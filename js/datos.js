@@ -110,7 +110,6 @@
             difficulty: "moderado",
             difficultyLabel: "Moderado",
             minutes: 9,
-            pendienteValidacion: true,
             context: "Marcos, 42 años, es traído a la guardia por su hermano tras una noche de consumo de alcohol en la que le escribió «ya no tengo sentido acá». Perdió su trabajo hace tres semanas y su pareja se mudó hace dos meses. Hoy está sobrio, tranquilo y algo avergonzado. Es tu primera entrevista con él. Disponés de 9 minutos para aplicar el L-RAMP.",
             actor: [
                 "Ideación activa anoche, bajo los efectos del alcohol, con intensidad 8/10; hoy la intensidad es 4/10 y no tiene un plan definido, aunque admite haber pensado en tomar «todas las pastillas para dormir juntas».",
