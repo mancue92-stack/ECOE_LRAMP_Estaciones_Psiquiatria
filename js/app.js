@@ -5,7 +5,12 @@
     var POLL_MS = 3000;
     var TOTAL_ITEMS = RUBRIC.reduce(function (n, c) { return n + c.items.length; }, 0);
     var $ = function (id) { return document.getElementById(id); };
-    var S = { estado: null, offset: 0, user: null, evals: {}, evalsRonda: -1, modoStaff: false };
+    var DEMORA_ASISTENCIA_MS = 1200;
+    var S = {
+        estado: null, offset: 0, user: null, evals: {}, evalsRonda: -1, modoStaff: false,
+        // Asistencia: los cambios se juntan y se envían en un solo lote; mientras tanto no se repinta el panel.
+        asistenciaPendiente: {}, envioAsistencia: null, ultimoEnvio: Promise.resolve(), enCurso: 0, repintar: false
+    };
 
     // ---------- Utilidades ----------
 
@@ -55,6 +60,7 @@
 
     // Repinta el panel conservando el desplazamiento de la lista y el campo enfocado.
     function renderAdmin() {
+        if (S.enCurso > 0) { S.repintar = true; return; }
         var contenedor = $('admin-contenido');
         var lista = $('lista-asistencia');
         var scroll = lista ? lista.scrollTop : 0;
@@ -210,12 +216,64 @@
         }).catch(errorAccion);
     }
 
+    // ---------- Asistencia en lote ----------
+
+    function contarPresentes() {
+        var n = document.querySelectorAll('[data-asistencia]:checked').length;
+        var el = $('contador-asistencia');
+        if (el) el.textContent = n;
+    }
+
+    function enviarAsistencia() {
+        var cambios = S.asistenciaPendiente;
+        S.asistenciaPendiente = {};
+        S.envioAsistencia = null;
+        S.ultimoEnvio = S.ultimoEnvio.then(function () {
+            return accionAdmin('asistencia', { cambios: cambios }, 'Asistencia guardada');
+        }).then(function () {
+            S.enCurso--;
+            // Siempre se repinta al terminar: si el envío falló, las casillas vuelven al estado real del servidor.
+            if (S.enCurso === 0) { S.repintar = false; renderTodo(); }
+        });
+        return S.ultimoEnvio;
+    }
+
+    // Junta los cambios de asistencia y los envía de una vez, tras una pausa corta o de inmediato.
+    function programarAsistencia(cambios, inmediato) {
+        Object.keys(cambios).forEach(function (id) { S.asistenciaPendiente[id] = cambios[id]; });
+        if (!S.envioAsistencia) S.enCurso++;
+        clearTimeout(S.envioAsistencia);
+        mostrarEstado('Guardando asistencia…', '');
+        if (inmediato) { enviarAsistencia(); return; }
+        S.envioAsistencia = setTimeout(enviarAsistencia, DEMORA_ASISTENCIA_MS);
+    }
+
+    // Antes de generar la ronda hay que asegurar que la asistencia ya está guardada.
+    function asistenciaGuardada() {
+        if (S.envioAsistencia) { clearTimeout(S.envioAsistencia); enviarAsistencia(); }
+        return S.ultimoEnvio;
+    }
+
+    function marcarTodos(presente) {
+        var cambios = {};
+        document.querySelectorAll('[data-asistencia]').forEach(function (c) {
+            c.checked = presente;
+            cambios[c.dataset.asistencia] = presente;
+        });
+        contarPresentes();
+        programarAsistencia(cambios, true);
+    }
+
     var ACCIONES_ADMIN = {
+        'todos-presentes': function () { marcarTodos(true); },
+        'ninguno-presente': function () { marcarTodos(false); },
         'timer-start': function () { return accionAdmin('timer', { op: 'start' }, 'Cronómetro en marcha'); },
         'timer-pause': function () { return accionAdmin('timer', { op: 'pause' }, 'Cronómetro en pausa'); },
         'timer-reset': function () { return accionAdmin('timer', { op: 'reset' }, 'Cronómetro reiniciado'); },
         cerrar: function () { return accionAdmin('cerrar', {}, 'Ronda cerrada'); },
-        generar: function () { return accionAdmin('generar', {}, 'Ronda generada'); },
+        generar: function () {
+            return asistenciaGuardada().then(function () { return accionAdmin('generar', {}, 'Ronda generada'); });
+        },
         reiniciar: function () {
             if (confirm('¿Borrar las parejas y evaluaciones de toda la sesión? No se puede deshacer.')) {
                 return accionAdmin('reiniciar', {}, 'Sesión reiniciada');
@@ -234,7 +292,10 @@
     $('admin-contenido').addEventListener('change', function (ev) {
         var t = ev.target;
         if (t.dataset.asistencia) {
-            accionAdmin('asistencia', { id: t.dataset.asistencia, presente: t.checked });
+            var cambio = {};
+            cambio[t.dataset.asistencia] = t.checked;
+            contarPresentes();
+            programarAsistencia(cambio, false);
         } else if (t.dataset.config) {
             var rondas = document.querySelector('[data-config="rondas"]').value;
             var minutos = document.querySelector('[data-config="minutos"]').value;
