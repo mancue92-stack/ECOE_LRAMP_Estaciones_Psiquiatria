@@ -4,7 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ECOE L-RAMP · Clase Práctica</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         /* ===== variables y reset ===== */
         :root {
@@ -949,6 +948,13 @@
         .file-input-wrapper .admin-btn {
             margin: 0;
         }
+    
+        /* ===== MULTIUSUARIO ===== */
+        .show-docente-inline { display: none; }
+        .rol-ayudante .solo-docente { display: none !important; }
+        .eval-card { margin-top: 10px; }
+        .eval-card textarea { font: inherit; padding: 6px; border: 1px solid var(--border); border-radius: 6px; }
+        .admin-btn[disabled] { opacity: .45; cursor: not-allowed; }
     </style>
 </head>
 <body>
@@ -959,19 +965,23 @@
             <h2>🏥 ECOE L-RAMP</h2>
             <p class="sub">Acceso a la práctica de estaciones clínicas</p>
             <form id="login-form">
-                <label for="login-name">Tu nombre</label>
-                <input type="text" id="login-name" placeholder="Ej: Ana Pérez" required />
+                <div id="alumno-group">
+                    <label for="login-name">Tu nombre</label>
+                    <select id="login-name"><option value="">Cargando…</option></select>
+                </div>
 
                 <div id="docente-pass-group" style="display:none;">
-                    <label for="login-pass">Contraseña de docente</label>
-                    <input type="password" id="login-pass" placeholder="Contraseña (solo para docente)" />
+                    <label for="login-rol">Rol</label>
+                    <select id="login-rol"><option value="docente">Docente</option><option value="ayudante">Ayudante</option></select>
+                    <label for="login-pass">Clave</label>
+                    <input type="password" id="login-pass" placeholder="Clave" autocomplete="off" />
                 </div>
 
                 <button type="submit" class="btn">Ingresar</button>
                 <div class="error" id="login-error"></div>
             </form>
-            <div class="toggle-role" id="toggle-role-btn">🔑 ¿Eres docente? Ingresa con contraseña</div>
-            <p style="font-size:.7rem; color:var(--muted); margin-top:10px;">Los alumnos ingresan solo con su nombre (debe estar en la lista cargada por el docente).</p>
+            <div class="toggle-role" id="toggle-role-btn">🔑 ¿Eres docente o ayudante? Ingresa con clave</div>
+            <p style="font-size:.7rem; color:var(--muted); margin-top:10px;">Los alumnos eligen su nombre de la lista cargada por el docente.</p>
         </div>
     </div>
 
@@ -984,15 +994,17 @@
             <button class="logout-btn" id="logout-btn">Cerrar sesión</button>
         </div>
 
+        <div id="red-aviso" style="display:none;background:#b45309;color:#fff;text-align:center;padding:6px;font-size:.85rem;">Reconectando con el servidor…</div>
+
         <header class="hero">
             <div class="wrap">
                 <div class="eyebrow">Psiquiatría de Urgencias · Primer Año de Residencia</div>
                 <h1>ECOE L-RAMP — Banco de Estaciones Clínicas</h1>
                 <p class="sub">Evaluación y práctica del manejo de la conducta suicida según el Protocolo L-RAMP (Linehan Risk Assessment and Management Protocol), adaptado a formato ECOE por estaciones para residentes de primer año.</p>
                 <div class="meta-row">
-                    <span class="pill">6 estaciones · dificultad leve a moderada</span>
+                    <span class="pill">7 casos · dificultad leve a moderada</span>
                     <span class="pill">Fiel al Protocolo L-RAMP</span>
-                    <span class="pill">Uso en grupo o autoestudio</span>
+                    <span class="pill">Uso en parejas o autoestudio</span>
                     <span class="pill">Duración total sugerida: 90–100 min</span>
                 </div>
             </div>
@@ -1003,8 +1015,9 @@
                 <button class="tabbtn active" data-target="guia">Guía rápida L-RAMP</button>
                 <button class="tabbtn" data-target="instrucciones">Cómo usar esta ECOE</button>
                 <button class="tabbtn" data-target="estacion">📍 Estación actual</button>
-                <button class="tabbtn show-docente" data-target="admin">📋 Panel docente</button>
-                <button class="tabbtn" data-target="rubrica">Rúbrica de evaluación</button>
+                <button class="tabbtn show-docente-inline solo-docente" data-target="admin">📋 Panel docente</button>
+                <button class="tabbtn show-docente-inline" data-target="evaluacion">📝 Evaluación</button>
+                <button class="tabbtn show-docente-inline" data-target="rubrica">Rúbrica de evaluación</button>
                 <button class="tabbtn" data-target="cierre">Cierre y referencias</button>
             </div>
         </nav>
@@ -1164,13 +1177,13 @@
 
                 <div class="grid2">
                     <div class="rolebox">
-                        <h4>Modalidad en grupo (recomendada)</h4>
+                        <h4>Modalidad en parejas (recomendada)</h4>
                         <ol class="tight">
-                            <li>Formar tríos: <b>Residente evaluador</b> (aplica el L-RAMP), <b>paciente estandarizado</b> (lee solo la ficha confidencial de su estación) y <b>observador</b> (usa la rúbrica).</li>
-                            <li>El residente lee únicamente el contexto público de la estación antes de entrar — nunca la ficha confidencial.</li>
-                            <li>Entrevista de 8–10 minutos (usar el cronómetro de cada estación), seguida de 5 minutos de devolución con la rúbrica.</li>
-                            <li>Rotar roles y de estación, priorizando que cada residente pase al menos una vez por cada rol.</li>
-                            <li>Cerrar cada estación revelando la <i>clave de corrección</i> y discutiendo la disposición final propuesta.</li>
+                            <li>El sistema forma parejas: <b>terapeuta</b> (aplica el L-RAMP y lee solo el contexto público) y <b>paciente estandarizado</b> (lee solo la ficha confidencial). Si los presentes son impares, el ayudante cubre el rol faltante. El docente y el ayudante evalúan con la rúbrica.</li>
+                            <li>El terapeuta lee únicamente el contexto público del caso antes de entrar — nunca la ficha confidencial.</li>
+                            <li>Entrevista cronometrada (el cronómetro es común y lo controla el docente), seguida de la devolución.</li>
+                            <li>En la ronda siguiente los roles se invierten con un caso nuevo; el sistema evita repetir casos.</li>
+                            <li>Al cerrar la ronda, el alumno ve la <i>clave de corrección</i> de su caso y se discute la disposición final propuesta.</li>
                         </ol>
                     </div>
                     <div class="rolebox">
@@ -1188,7 +1201,7 @@
                     <h2>Reglas por rol</h2>
                     <div class="grid2">
                         <div class="box">
-                            <h4>Residente evaluador</h4>
+                            <h4>Terapeuta (residente que aplica el L-RAMP)</h4>
                             <ul class="tight">
                                 <li>Solo conoce el contexto público de la estación — no lee la ficha confidencial.</li>
                                 <li>Aplica las 6 preguntas sistematizadas, sin apurar ni saltar pasos.</li>
@@ -1205,6 +1218,15 @@
                                 <li>Revela el plan y la letalidad solo si se pregunta de forma directa y específica.</li>
                                 <li>Puede minimizar al inicio si así lo indica su ficha — es realista, no un obstáculo.</li>
                                 <li>Se mantiene en personaje incluso frente a preguntas incómodas o silencios.</li>
+                            </ul>
+                        </div>
+                        <div class="box">
+                            <h4>Docente y ayudante (evaluadores)</h4>
+                            <ul class="tight">
+                                <li>Evalúan al terapeuta de cada pareja con la rúbrica, en la pestaña Evaluación; no intervienen en la entrevista.</li>
+                                <li>El sistema reparte las parejas entre ambos. Si los presentes son impares, el ayudante actúa como paciente o terapeuta y el docente evalúa todas las parejas de esa ronda.</li>
+                                <li>La pareja donde el ayudante es terapeuta no se evalúa.</li>
+                                <li>Pueden dejar un comentario por pareja; todo queda guardado en la hoja de resultados.</li>
                             </ul>
                         </div>
                     </div>
@@ -1224,72 +1246,12 @@
 
             <!-- ==================== PANEL DOCENTE ==================== -->
             <section id="admin" class="view">
-                <div class="admin-panel">
-                    <h3><span>📋 Panel de control docente</span> <span class="badge-admin">Administrador</span></h3>
-                    <p class="small">Gestiona la clase: carga de alumnos, control de estaciones y tiempo, visualización de progreso.</p>
+                <div id="admin-contenido"></div>
+            </section>
 
-                    <div class="admin-row">
-                        <div class="col">
-                            <label>📋 Alumnos (separados por coma)</label>
-                            <input type="text" id="student-list" placeholder="Ana, Luis, Carla, Pedro, Marta" />
-                            <button class="admin-btn" id="btn-load-students">📥 Cargar</button>
-                            <button class="admin-btn outline small" id="btn-clear-students">🗑️ Limpiar</button>
-                            <div class="file-input-wrapper">
-                                <input type="file" id="file-input" accept=".xlsx,.xls" />
-                                <button class="admin-btn small" id="btn-load-excel">📂 Subir Excel</button>
-                            </div>
-                            <div style="font-size:.65rem;color:var(--muted);margin-top:2px;">Formato: Excel (.xlsx o .xls), una columna con nombres (sin cabecera).</div>
-                        </div>
-                        <div class="col">
-                            <label>👥 Alumnos cargados: <span id="student-count">0</span></label>
-                            <div id="student-names" style="font-size:.75rem;color:var(--muted);max-height:80px;overflow-y:auto;"></div>
-                        </div>
-                    </div>
-
-                    <hr style="border-color:var(--border);margin:8px 0;" />
-
-                    <div class="admin-row">
-                        <div class="col">
-                            <label>⏱ Control de tiempo</label>
-                            <div class="timer-control" id="timer-control">
-                                <span class="display" id="timer-display">--:--</span>
-                                <button class="btn-timer-start">▶ Iniciar</button>
-                                <button class="btn-timer-pause">⏸️ Pausar</button>
-                                <button class="btn-timer-reset">⏹️ Reiniciar</button>
-                                <span style="font-size:.65rem;opacity:.8;">min: <input type="number" class="setmin" value="8" min="1" max="30" style="width:36px;padding:2px;border-radius:4px;border:none;text-align:center;"></span>
-                            </div>
-                        </div>
-                        <div class="col">
-                            <label>📌 Estación actual</label>
-                            <div style="display:flex;gap:4px;flex-wrap:wrap;">
-                                <button class="admin-btn gold" id="btn-generate-groups">🎲 Generar grupos</button>
-                                <button class="admin-btn success" id="btn-next-station">⏩ Siguiente</button>
-                            </div>
-                            <div style="margin-top:4px;font-size:.8rem;">
-                                Estación: <span id="current-station-label">1</span> / 6
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="groups-container">
-                        <h4>👥 Grupos asignados (estación actual)</h4>
-                        <div id="group-list" class="group-list"></div>
-                    </div>
-
-                    <div style="margin-top:10px;">
-                        <button class="admin-btn" id="btn-export-csv">📊 CSV</button>
-                        <button class="admin-btn" id="btn-export-excel">📊 Excel</button>
-                        <button class="admin-btn" id="btn-export-pdf">📄 PDF</button>
-                        <button class="admin-btn outline" id="btn-sync-google">☁️ Sincronizar con Google Sheets</button>
-                        <button class="admin-btn outline small" id="btn-reset-all">🗑️ Reiniciar todo (local)</button>
-                    </div>
-                    <div class="sync-status" id="sync-status">Estado: listo</div>
-                </div>
-
-                <div class="card">
-                    <h4>📈 Progreso de estaciones</h4>
-                    <div id="progress-summary" style="font-size:.85rem;">Sin datos aún.</div>
-                </div>
+            <!-- ==================== EVALUACIÓN (DOCENTE Y AYUDANTE) ==================== -->
+            <section id="evaluacion" class="view">
+                <div id="evaluacion-contenido"></div>
             </section>
 
             <!-- ==================== RÚBRICA ==================== -->
@@ -1297,7 +1259,7 @@
                 <div class="card">
                     <div class="section-tag">Marco de corrección</div>
                     <h2>Rúbrica general de fidelidad al L-RAMP</h2>
-                    <p class="small">Esta misma rúbrica se aplica dentro de cada estación (con checklist interactivo y puntaje automático). Se muestra aquí también de forma consolidada como referencia rápida para el observador.</p>
+                    <p class="small">Esta misma rúbrica se aplica dentro de cada estación (con checklist interactivo y puntaje automático). Se muestra aquí también de forma consolidada como referencia rápida para el docente y el ayudante, que evalúan al terapeuta de cada pareja.</p>
                     <div class="tblwrap">
                         <table>
                             <tr><th>Bloque</th><th>Qué observar</th></tr>
@@ -1312,8 +1274,8 @@
                 <div class="card">
                     <h2>Escala de desempeño sugerida</h2>
                     <div class="grid3">
-                        <div class="box"><h4 style="color:var(--warn)">&lt; 60% — A reforzar</h4><p class="small">Se recomienda repetir la estación revisando la guía rápida antes de un segundo intento.</p></div>
-                        <div class="box"><h4 style="color:var(--levemod)">60–80% — Adecuado</h4><p class="small">Cumple los pasos centrales; discutir en grupo los ítems no marcados.</p></div>
+                        <div class="box"><h4 style="color:var(--warn)">&lt; 60% — A reforzar</h4><p class="small">Se recomienda repetir el caso revisando la guía rápida antes de un segundo intento.</p></div>
+                        <div class="box"><h4 style="color:var(--levemod)">60–80% — Adecuado</h4><p class="small">Cumple los pasos centrales; discutir con la pareja los ítems no marcados.</p></div>
                         <div class="box"><h4 style="color:var(--ok)">&gt; 80% — Sólido</h4><p class="small">Buena fidelidad al protocolo; usar como caso modelo para la puesta en común.</p></div>
                     </div>
                 </div>
@@ -1353,906 +1315,12 @@
         </footer>
     </div>
 
-    <script>
-        // ====================================================================
-        //  CONFIGURACIÓN
-        // ====================================================================
-        const DOCENTE_PASS = 'docente2025';
-        const GAS_URL = ''; // Dejar vacío para desactivar sincronización con Google Sheets
-
-        // ====================================================================
-        //  DATA (estaciones y rúbrica) - CONTENIDO COMPLETO DEL ORIGINAL
-        // ====================================================================
-        const STATIONS = [{
-            id: 1,
-            title: "Sofía, 20 años",
-            subtitle: "Estrés académico e ideación pasiva incipiente",
-            difficulty: "leve",
-            difficultyLabel: "Leve",
-            minutes: 8,
-            context: "Sofía, 20 años, estudiante de Enfermería, es derivada por su médico de cabecera tras comentar «no aguanto más» durante un control por insomnio. Es tu primera entrevista con ella. Disponés de 8 minutos para aplicar el L-RAMP: evaluar el riesgo, identificar factores protectores y, si corresponde, construir un plan de seguridad.",
-            actor: [
-                "Está cursando los últimos exámenes finales antes de recibirse; sobrecarga académica y pocas horas de sueño desde hace 3 semanas.",
-                "Ideación pasiva ocasional desde hace 10 días («a veces pienso que si me durmiera y no despertara sería un descanso»), sin ideación activa, sin plan, sin intento previo.",
-                "Nunca tuvo pensamientos similares antes de este episodio.",
-                "Minimiza al inicio: «estoy exagerando, seguro es cansancio».",
-                "Buen vínculo con su madre y su grupo de estudio; el semestre termina en dos semanas.",
-                "Si se indaga con calma la pregunta 6, reconoce que imaginarse recibida como enfermera «le da ganas de seguir»."
-            ],
-            focus: "Aplicar las 6 preguntas incluso ante una clínica leve; diferenciar con precisión ideación pasiva de activa; identificar factores protectores fuertes (proyecto vital cercano, red de apoyo); construir un plan de seguridad breve centrado en manejo del estrés y del sueño, sin sobre-medicalizar ni psiquiatrizar en exceso.",
-            disposition: "No amerita internación: riesgo bajo, sin plan, buen apoyo social y factores protectores sólidos. Alta con plan de seguridad breve, psicoeducación sobre sueño y manejo del estrés, y seguimiento ambulatorio en 48–72 horas con contacto al médico de cabecera."
-        }, {
-            id: 2,
-            title: "Iván, 19 años",
-            subtitle: "Cortes tras una discusión familiar: autolesión vs. tentativa",
-            difficulty: "levemod",
-            difficultyLabel: "Leve-Moderado",
-            minutes: 9,
-            context: "Iván es traído por su padre a la guardia porque esta mañana encontraron cortes superficiales en su antebrazo, tras una fuerte discusión anoche por su orientación vocacional. Es tu primera entrevista con él. Disponés de 9 minutos.",
-            actor: [
-                "Los cortes de anoche fueron superficiales, en el antebrazo no dominante, sin intención de morir — los hizo para «sacarse la angustia de encima» después de la pelea.",
-                "Nunca tuvo tentativas previas ni ideación suicida franca.",
-                "Reconoce que lo hace ocasionalmente desde hace un año cuando se siente «desbordado»; nunca se lo contó a nadie hasta hoy.",
-                "Buen vínculo con un amigo cercano y con un profesor guía del colegio.",
-                "Le preocupa que sus padres piensen que «está loco» y que esto quede expuesto frente a su familia.",
-                "Si se pregunta con calma y de forma directa, diferencia con claridad el corte de anoche de un intento de matarse."
-            ],
-            focus: "Distinguir autolesión no suicida de conducta suicida sin restar importancia clínica al hallazgo; explorar la función emocional de la conducta (regulación del malestar, no comunicación manipuladora — derribar ese mito); psicoeducación breve; plan de seguridad centrado en estrategias de regulación emocional y en mejorar la comunicación familiar.",
-            disposition: "No amerita internación. Derivación a tratamiento ambulatorio especializado (considerar abordaje con habilidades tipo TCC/DBT para adolescentes). Plan de seguridad con participación familiar acordada con el propio Iván, y seguimiento en 48–72 horas."
-        }, {
-            id: 3,
-            title: "Don Casimiro, 68 años",
-            subtitle: "Viudez, jubilación reciente y acceso a un arma de fuego",
-            difficulty: "moderado",
-            difficultyLabel: "Moderado",
-            minutes: 10,
-            context: "Don Casimiro es traído por su hija, quien lo notó «apagado» y con frases como «ya cumplí con todo» durante la última semana. Vive solo desde su jubilación hace 6 meses. Es tu primera entrevista con él. Disponés de 10 minutos.",
-            actor: [
-                "Minimiza al inicio: «estoy bien, es la edad, no hay que hacer un escándalo».",
-                "Si se pregunta de forma directa y con calma, reconoce que hace unas noches sostuvo su revólver reglamentario (fue policía) y pensó «sería rápido».",
-                "No tiene plan para hoy ni fecha definida, pero el arma está cargada en su mesa de luz.",
-                "Aislamiento social progresivo desde la jubilación; dejó de ver a sus excompañeros y de salir a caminar.",
-                "Insomnio, anhedonia e ideas de inutilidad compatibles con un cuadro depresivo no tratado.",
-                "Factor protector central: quiere estar presente en el casamiento de su hija dentro de 4 meses."
-            ],
-            focus: "Sostener la pregunta directa pese a la minimización inicial; indagar letalidad y acceso concreto al método (pregunta 3); trabajar el manejo de medios letales (punto D del plan de seguridad) como intervención central de esta estación; discutir en grupo el punto de corte entre manejo ambulatorio intensivo e internación.",
-            disposition: "Caso límite para discusión grupal: dado el acceso inmediato a un medio de alta letalidad sin garantía de restricción, se espera que el residente proponga la remoción inmediata y verificada del arma (con apoyo familiar) como condición para continuar en forma ambulatoria, valorando la internación breve si esto no puede garantizarse. Seguimiento estrecho a las 24 horas e inicio de tratamiento del cuadro depresivo."
-        }, {
-            id: 4,
-            title: "Doña Elsa, 61 años",
-            subtitle: "Diagnóstico oncológico reciente e ideación de «puerta trasera»",
-            difficulty: "moderado",
-            difficultyLabel: "Moderado",
-            minutes: 9,
-            context: "Doña Elsa es derivada por su oncólogo, que la notó angustiada tras recibir la noticia de progresión de su enfermedad. Es tu primera entrevista con ella. Disponés de 9 minutos.",
-            actor: [
-                "Guardó parte de su medicación para el dolor (opioides indicados por su enfermedad) «por si en algún momento ya no aguanto», sin plan ni fecha definida.",
-                "No tiene ideación activa hoy, pero reconoce que la idea «está ahí, como un resguardo» desde hace unas dos semanas.",
-                "Le cuesta hablar de esto por miedo a preocupar a su familia y a que le «saquen» el tratamiento del dolor.",
-                "Factor protector central: dos nietos pequeños que la visitan cada semana; quiere verlos crecer.",
-                "Buen vínculo con su equipo de oncología y cuidados paliativos."
-            ],
-            focus: "Reconocer un plan de baja probabilidad inmediata pero alta letalidad (ideación de «puerta trasera»); trabajar el compromiso de tratamiento sin generar pánico ni actitud de juicio; abordar el manejo de medios letales de forma colaborativa y no punitiva (gestión conjunta del excedente de medicación); coordinar con el equipo tratante de oncología/cuidados paliativos.",
-            disposition: "No amerita internación de urgencia al no existir riesgo inminente, pero sí requiere manejo activo de medios letales (retiro del excedente de opioides con apoyo familiar y del equipo tratante), seguimiento estrecho en 24–48 horas y coordinación interdisciplinaria explícita con oncología."
-        }, {
-            id: 5,
-            title: "Bruno, 16 años",
-            subtitle: "Conflicto de pareja, con sus padres esperando afuera",
-            difficulty: "levemod",
-            difficultyLabel: "Leve-Moderado",
-            minutes: 9,
-            context: "Bruno es traído por su madre tras encontrar un mensaje de texto a su pareja diciendo «no quiero estar más». Está en la guardia hace una hora, ya contenido; sus padres esperan afuera. Es tu primera entrevista con él. Disponés de 9 minutos.",
-            actor: [
-                "Tuvo ideación activa transitoria anoche, tras terminar con su pareja de 8 meses, sin plan ni intento; ya remitió y se siente «tonto» por haberlo escrito.",
-                "Nunca tuvo ideación suicida antes de anoche.",
-                "Buen vínculo con ambos padres, aunque le cuesta hablar de temas emocionales con su padre.",
-                "Buen rendimiento escolar; el equipo de fútbol es una red de apoyo importante.",
-                "Se avergüenza de que sus padres se hayan enterado y teme que «lo traten como loco» en la escuela."
-            ],
-            focus: "Evaluar si corresponde el alta con plan de seguridad (criterios de no internación); decidir cómo involucrar a la familia en el plan de seguridad (puntos A–E) respetando la autonomía y la intimidad del adolescente; psicoeducar a los padres sobre señales de alarma y manejo de medios en el hogar (medicamentos, elementos cortopunzantes) sin generar sobreprotección punitiva.",
-            disposition: "No amerita internación. Alta con plan de seguridad co-construido entre Bruno y sus padres (con su consentimiento sobre qué compartir), contacto de seguimiento en 24 horas y turno con salud mental durante la semana."
-        }, {
-            id: 6,
-            title: "Patricia, 34 años",
-            subtitle: "Reactivación de ideación en tratamiento, con tentativa previa",
-            difficulty: "moderado",
-            difficultyLabel: "Moderado",
-            minutes: 10,
-            context: "Patricia está en tratamiento ambulatorio hace 4 meses por Trastorno Depresivo Mayor, con una tentativa por intoxicación medicamentosa hace un año. Solicitó una consulta de urgencia porque «volvió a pensar en lo mismo» tras una discusión de pareja anoche. Disponés de 10 minutos.",
-            actor: [
-                "Ideación activa desde anoche, intensidad 6/10 en el momento del episodio, sin plan concreto hoy; reconoce haber mirado el cajón donde antes guardaba los comprimidos (ya no están, los tiró tras el alta).",
-                "Puede identificar con claridad la cadena: discusión de pareja → sensación de «no valgo nada» → ideación.",
-                "Usó habilidades aprendidas en terapia (llamó a su hermana, salió a caminar) y logró bajar la intensidad a 3/10 para cuando llega a la consulta.",
-                "Tiene turno programado con su terapeuta en 5 días.",
-                "Factores protectores: su hija de 6 años, y el vínculo terapéutico actual, que valora mucho."
-            ],
-            focus: "Aplicar el análisis en cadena (factores de vulnerabilidad → evento precipitante → conducta → consecuencias); reforzar explícitamente las habilidades que ya usó con éxito; renegociar el compromiso de tratamiento de forma progresiva («dame unos días») en lugar de un contrato rígido de no-suicidio; decidir un seguimiento acorde a la mejoría ya lograda.",
-            disposition: "No amerita internación: la intensidad bajó con habilidades propias y hay compromiso terapéutico activo. Reforzar el plan de seguridad vigente, contacto telefónico de control en 24 horas y coordinación con la terapeuta tratante para adelantar la sesión programada."
-        }];
-
-        const RUBRIC = [
-            { cat: "Apertura y vínculo", items: ["Se presentó y explicó el motivo/marco de la entrevista", "Generó un ambiente sin juicio, validando la angustia antes de indagar"] },
-            { cat: "Evaluación de riesgo (6 preguntas)", items: [
-                    "P1 · Preguntó de forma directa por ideación suicida actual y plan",
-                    "P2 · Usó la escala subjetiva 0–10 de intensidad/malestar",
-                    "P3 · Indagó letalidad y acceso concreto a medios",
-                    "P4 · Exploró el «para qué», evitando el «por qué», buscando razones para vivir",
-                    "P5 · Indagó historia previa de ideación/tentativas y habilidades usadas",
-                    "P6 · Preguntó qué lo/la detuvo, reforzando razones para vivir"
-                ] },
-            { cat: "Factores de riesgo y protectores", items: [
-                    "Identificó al menos 2 factores de riesgo inminente relevantes al caso",
-                    "Identificó al menos 2 factores protectores relevantes al caso",
-                    "Evitó mitos o supuestos (p. ej., «si mejoró, ya pasó el riesgo»)"
-                ] },
-            { cat: "Manejo y plan de seguridad", items: [
-                    "Construyó un Compromiso de Tratamiento progresivo (no un contrato rígido)",
-                    "Plan de Seguridad — A: señales de alarma",
-                    "Plan de Seguridad — B: estrategias de autogestión",
-                    "Plan de Seguridad — C: red de apoyo / distracción social",
-                    "Plan de Seguridad — D: manejo de medios letales",
-                    "Plan de Seguridad — E: revisó y repactó el compromiso de tratamiento"
-                ] },
-            { cat: "Disposición final", items: [
-                    "Tomó una decisión de internación/no internación con criterio explícito",
-                    "Definió un seguimiento concreto (12h / 24h / 48–72h / próxima sesión)",
-                    "Documentaría esto en un registro tipo L-RAMP"
-                ] }
-        ];
-
-        // ====================================================================
-        //  STATE
-        // ====================================================================
-        let currentUser = null;
-        let students = [];
-        let currentStation = 1;
-        let groups = [];
-        let stationData = {};
-        let timerSeconds = 0;
-        let timerRunning = false;
-        let timerMinutes = 8;
-        let timerInterval = null;
-        let isDocenteMode = false;
-
-        // ====================================================================
-        //  DOM REFS
-        // ====================================================================
-        const $ = id => document.getElementById(id);
-        const app = $('app');
-        const loginOverlay = $('login-overlay');
-        const loginForm = $('login-form');
-        const loginName = $('login-name');
-        const loginPass = $('login-pass');
-        const loginError = $('login-error');
-        const toggleRoleBtn = $('toggle-role-btn');
-        const docentePassGroup = $('docente-pass-group');
-        const bannerName = $('banner-name');
-        const bannerRole = $('banner-role');
-        const logoutBtn = $('logout-btn');
-        const studentListInput = $('student-list');
-        const btnLoadStudents = $('btn-load-students');
-        const btnClearStudents = $('btn-clear-students');
-        const btnLoadExcel = $('btn-load-excel');
-        const fileInput = $('file-input');
-        const studentCount = $('student-count');
-        const studentNames = $('student-names');
-        const btnGenerateGroups = $('btn-generate-groups');
-        const btnNextStation = $('btn-next-station');
-        const currentStationLabel = $('current-station-label');
-        const groupListEl = $('group-list');
-        const btnExportCSV = $('btn-export-csv');
-        const btnExportExcel = $('btn-export-excel');
-        const btnExportPDF = $('btn-export-pdf');
-        const btnSyncGoogle = $('btn-sync-google');
-        const btnResetAll = $('btn-reset-all');
-        const progressSummary = $('progress-summary');
-        const syncStatus = $('sync-status');
-        const timerDisplay = $('timer-display');
-        const timerControl = $('timer-control');
-        const estacionContenido = $('estacion-contenido');
-
-        // ====================================================================
-        //  LOGIN
-        // ====================================================================
-        toggleRoleBtn.addEventListener('click', () => {
-            isDocenteMode = !isDocenteMode;
-            docentePassGroup.style.display = isDocenteMode ? 'block' : 'none';
-            toggleRoleBtn.textContent = isDocenteMode ? '👤 ¿Eres alumno? Ingresa solo tu nombre' :
-                '🔑 ¿Eres docente? Ingresa con contraseña';
-            loginError.textContent = '';
-        });
-
-        loginForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const name = loginName.value.trim();
-            if (!name) { loginError.textContent = 'Por favor ingresa tu nombre.'; return; }
-            loginError.textContent = '';
-
-            if (isDocenteMode) {
-                const pass = loginPass.value.trim();
-                if (pass !== DOCENTE_PASS) {
-                    loginError.textContent = 'Contraseña incorrecta.';
-                    return;
-                }
-                currentUser = { name, role: 'docente' };
-            } else {
-                if (!students.includes(name)) {
-                    loginError.textContent = 'No estás en la lista de alumnos. Consulta al docente.';
-                    return;
-                }
-                currentUser = { name, role: 'alumno' };
-            }
-            enterApp();
-        });
-
-        function enterApp() {
-            loginOverlay.classList.add('hidden');
-            app.style.display = 'block';
-            document.body.className = 'role-' + currentUser.role;
-            bannerName.textContent = currentUser.name;
-            bannerRole.textContent = currentUser.role === 'docente' ? 'Docente / Administrador' : 'Alumno';
-
-            loadFromStorage();
-            if (currentUser.role === 'docente') {
-                studentListInput.value = students.join(', ');
-                renderStudentList();
-                renderGroups();
-                updateProgressSummary();
-                updateCurrentStationLabel();
-                activateTab('admin');
-            } else {
-                activateTab('estacion');
-                renderEstacionAlumno();
-                updateTimerDisplay();
-            }
-            if (timerRunning) startTimer();
-            document.querySelectorAll('.tabbtn').forEach(btn => {
-                if (btn.dataset.target === 'admin' || btn.dataset.target === 'rubrica') {
-                    btn.style.display = currentUser.role === 'alumno' ? 'none' : 'inline-block';
-                }
-            });
-        }
-
-        logoutBtn.addEventListener('click', () => {
-            if (confirm('¿Cerrar sesión?')) {
-                if (timerInterval) clearInterval(timerInterval);
-                currentUser = null;
-                app.style.display = 'none';
-                loginOverlay.classList.remove('hidden');
-                document.body.className = '';
-                loginName.value = '';
-                loginPass.value = '';
-                isDocenteMode = false;
-                docentePassGroup.style.display = 'none';
-                toggleRoleBtn.textContent = '🔑 ¿Eres docente? Ingresa con contraseña';
-            }
-        });
-
-        // ====================================================================
-        //  TABS
-        // ====================================================================
-        function activateTab(targetId) {
-            document.querySelectorAll('.tabbtn').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('section.view').forEach(s => s.classList.remove('active'));
-            const btn = document.querySelector(`.tabbtn[data-target="${targetId}"]`);
-            if (btn) btn.classList.add('active');
-            const section = document.getElementById(targetId);
-            if (section) section.classList.add('active');
-        }
-
-        document.querySelectorAll('.tabbtn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const target = btn.dataset.target;
-                if (currentUser && currentUser.role === 'alumno' && (target === 'admin' || target === 'rubrica')) {
-                    activateTab('estacion');
-                    return;
-                }
-                activateTab(target);
-            });
-        });
-
-        // ====================================================================
-        //  STORAGE
-        // ====================================================================
-        function saveToStorage() {
-            const data = { students, currentStation, groups, stationData, timerSeconds, timerRunning, timerMinutes };
-            localStorage.setItem('ecoe_lram_data', JSON.stringify(data));
-        }
-
-        function loadFromStorage() {
-            const raw = localStorage.getItem('ecoe_lram_data');
-            if (raw) {
-                try {
-                    const data = JSON.parse(raw);
-                    students = data.students || [];
-                    currentStation = data.currentStation || 1;
-                    groups = data.groups || [];
-                    stationData = data.stationData || {};
-                    timerSeconds = data.timerSeconds || 0;
-                    timerRunning = data.timerRunning || false;
-                    timerMinutes = data.timerMinutes || 8;
-                } catch (e) { /* ignore */ }
-            }
-            if (students.length >= 3 && groups.length === 0) {
-                generateGroupsForStation(currentStation);
-            }
-            updateTimerDisplay();
-        }
-
-        function resetAllData() {
-            if (!confirm('¿Reiniciar todos los datos locales? (Los datos en la nube no se borran)')) return;
-            students = [];
-            groups = [];
-            stationData = {};
-            currentStation = 1;
-            timerSeconds = 0;
-            timerRunning = false;
-            localStorage.removeItem('ecoe_lram_data');
-            if (timerInterval) clearInterval(timerInterval);
-            renderStudentList();
-            renderGroups();
-            updateProgressSummary();
-            updateCurrentStationLabel();
-            updateTimerDisplay();
-            studentListInput.value = '';
-            if (currentUser && currentUser.role === 'alumno') renderEstacionAlumno();
-            setSyncStatus('Datos reiniciados', 'ok');
-        }
-
-        btnResetAll.addEventListener('click', resetAllData);
-
-        // ====================================================================
-        //  STUDENTS
-        // ====================================================================
-        function renderStudentList() {
-            studentCount.textContent = students.length;
-            studentNames.innerHTML = students.length ? students.map(s =>
-                `<span style="display:inline-block;background:var(--cream);padding:2px 8px;border-radius:12px;margin:2px;font-size:.8rem;">${s}</span>`
-            ).join('') : 'No hay alumnos cargados.';
-        }
-
-        btnLoadStudents.addEventListener('click', () => {
-            const raw = studentListInput.value.trim();
-            if (!raw) { setSyncStatus('Ingresa al menos un nombre.', 'error'); return; }
-            const newStudents = raw.split(',').map(s => s.trim()).filter(s => s.length > 0);
-            const unique = [...new Set([...students, ...newStudents])];
-            students = unique;
-            saveToStorage();
-            renderStudentList();
-            if (students.length >= 3 && groups.length === 0) {
-                generateGroupsForStation(currentStation);
-            }
-            setSyncStatus('Alumnos cargados: ' + students.length, 'ok');
-        });
-
-        btnClearStudents.addEventListener('click', () => {
-            if (confirm('¿Limpiar la lista de alumnos?')) {
-                students = [];
-                groups = [];
-                stationData = {};
-                saveToStorage();
-                renderStudentList();
-                renderGroups();
-                updateProgressSummary();
-                setSyncStatus('Lista limpiada', 'ok');
-            }
-        });
-
-        // Carga por Excel
-        btnLoadExcel.addEventListener('click', () => {
-            const file = fileInput.files[0];
-            if (!file) { setSyncStatus('Selecciona un archivo Excel (.xlsx o .xls).', 'error'); return; }
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                    const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
-                    const names = [];
-                    jsonData.forEach(row => {
-                        if (row.length > 0 && row[0] && row[0].toString().trim()) {
-                            const cell = row[0].toString().trim();
-                            if (cell.includes(',')) {
-                                cell.split(',').forEach(n => {
-                                    const trimmed = n.trim();
-                                    if (trimmed) names.push(trimmed);
-                                });
-                            } else {
-                                names.push(cell);
-                            }
-                        }
-                    });
-                    if (names.length === 0) {
-                        setSyncStatus('No se encontraron nombres en el Excel.', 'error');
-                        return;
-                    }
-                    const unique = [...new Set([...students, ...names])];
-                    students = unique;
-                    saveToStorage();
-                    renderStudentList();
-                    if (students.length >= 3 && groups.length === 0) {
-                        generateGroupsForStation(currentStation);
-                    }
-                    setSyncStatus('Alumnos cargados desde Excel: ' + names.length + ' (totales: ' + students.length + ')',
-                        'ok');
-                    fileInput.value = '';
-                } catch (err) {
-                    setSyncStatus('Error al leer el archivo: ' + err.message, 'error');
-                }
-            };
-            reader.readAsArrayBuffer(file);
-        });
-
-        // ====================================================================
-        //  GROUP GENERATION
-        // ====================================================================
-        function generateGroupsForStation(stationId) {
-            if (students.length < 3) {
-                setSyncStatus('Se necesitan al menos 3 alumnos para generar grupos.', 'error');
-                return false;
-            }
-            const shuffled = [...students];
-            for (let i = shuffled.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-            }
-            const roles = ['paciente', 'terapeuta', 'observador'];
-            const newGroups = [];
-            for (let i = 0; i < shuffled.length; i += 3) {
-                const chunk = shuffled.slice(i, i + 3);
-                if (chunk.length < 3) break;
-                const members = chunk.map((name, idx) => ({ name, role: roles[idx] }));
-                newGroups.push({ members });
-            }
-            if (newGroups.length === 0) {
-                setSyncStatus('No se pudieron formar grupos completos. Mínimo 3 alumnos.', 'error');
-                return false;
-            }
-            groups = newGroups;
-            if (!stationData[stationId]) stationData[stationId] = {};
-            newGroups.forEach((g, idx) => {
-                if (!stationData[stationId][idx]) stationData[stationId][idx] = { checked: [], done: false };
-            });
-            saveToStorage();
-            renderGroups();
-            setSyncStatus(`Grupos generados para estación ${stationId} (${groups.length} grupos)`, 'ok');
-            return true;
-        }
-
-        btnGenerateGroups.addEventListener('click', () => {
-            if (students.length < 3) {
-                alert('Se necesitan al menos 3 alumnos cargados.');
-                return;
-            }
-            generateGroupsForStation(currentStation);
-            if (currentUser && currentUser.role === 'docente') renderGroups();
-            if (currentUser && currentUser.role === 'alumno') renderEstacionAlumno();
-        });
-
-        function renderGroups() {
-            groupListEl.innerHTML = '';
-            if (!groups.length) {
-                groupListEl.innerHTML = '<p class="small">No hay grupos generados para esta estación.</p>';
-                return;
-            }
-            groups.forEach((g, gi) => {
-                const card = document.createElement('div');
-                card.className = 'group-card';
-                card.innerHTML = `<strong>Grupo ${gi+1}</strong>`;
-                g.members.forEach(m => {
-                    const roleClass = m.role;
-                    const label = { paciente: 'Paciente', terapeuta: 'Terapeuta', observador: 'Observador' } [
-                    m.role] || m.role;
-                    card.innerHTML += `<div>${m.name} <span class="role-tag ${roleClass}">${label}</span></div>`;
-                });
-                groupListEl.appendChild(card);
-            });
-        }
-
-        // ====================================================================
-        //  TIMER
-        // ====================================================================
-        function updateTimerDisplay() {
-            const mins = Math.floor(timerSeconds / 60);
-            const secs = timerSeconds % 60;
-            timerDisplay.textContent = (mins < 10 ? '0' : '') + mins + ':' + (secs < 10 ? '0' : '') + secs;
-            if (timerSeconds <= 0) timerControl.classList.add('alert');
-            else timerControl.classList.remove('alert');
-        }
-
-        function startTimer() {
-            if (timerInterval) clearInterval(timerInterval);
-            timerRunning = true;
-            timerInterval = setInterval(() => {
-                if (timerSeconds > 0) {
-                    timerSeconds--;
-                    updateTimerDisplay();
-                    saveToStorage();
-                    if (timerSeconds === 0) {
-                        clearInterval(timerInterval);
-                        timerRunning = false;
-                        setSyncStatus('⏰ Tiempo finalizado', 'error');
-                        if (currentUser && currentUser.role === 'alumno') renderEstacionAlumno();
-                    }
-                }
-            }, 1000);
-            setSyncStatus('Tiempo en marcha', 'ok');
-        }
-
-        function stopTimer() {
-            if (timerInterval) {
-                clearInterval(timerInterval);
-                timerInterval = null;
-                timerRunning = false;
-                saveToStorage();
-                setSyncStatus('Tiempo pausado', '');
-            }
-        }
-
-        function resetTimer() {
-            stopTimer();
-            const input = timerControl.querySelector('.setmin');
-            timerMinutes = parseInt(input.value, 10) || 8;
-            timerSeconds = timerMinutes * 60;
-            updateTimerDisplay();
-            timerRunning = false;
-            saveToStorage();
-            setSyncStatus('Tiempo reiniciado', '');
-            if (currentUser && currentUser.role === 'alumno') renderEstacionAlumno();
-        }
-
-        timerControl.querySelector('.btn-timer-start').addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (timerSeconds <= 0) {
-                const input = timerControl.querySelector('.setmin');
-                timerMinutes = parseInt(input.value, 10) || 8;
-                timerSeconds = timerMinutes * 60;
-                updateTimerDisplay();
-            }
-            startTimer();
-        });
-        timerControl.querySelector('.btn-timer-pause').addEventListener('click', (e) => {
-            e.stopPropagation();
-            stopTimer();
-        });
-        timerControl.querySelector('.btn-timer-reset').addEventListener('click', (e) => {
-            e.stopPropagation();
-            resetTimer();
-        });
-        timerControl.querySelector('.setmin').addEventListener('change', (e) => {
-            e.stopPropagation();
-            if (!timerRunning) {
-                const val = parseInt(e.target.value, 10) || 8;
-                timerMinutes = val;
-                timerSeconds = val * 60;
-                updateTimerDisplay();
-                saveToStorage();
-            }
-        });
-
-        // ====================================================================
-        //  STATION NAVIGATION
-        // ====================================================================
-        btnNextStation.addEventListener('click', () => {
-            if (currentStation < 6) {
-                if (timerRunning) stopTimer();
-                currentStation++;
-                generateGroupsForStation(currentStation);
-                updateCurrentStationLabel();
-                renderGroups();
-                updateProgressSummary();
-                resetTimer();
-                setSyncStatus(`Avanzando a estación ${currentStation}`, 'ok');
-                if (currentUser && currentUser.role === 'alumno') renderEstacionAlumno();
-                if (currentUser && currentUser.role === 'docente') activateTab('admin');
-            } else {
-                alert('Ya estás en la última estación.');
-            }
-        });
-
-        function updateCurrentStationLabel() {
-            currentStationLabel.textContent = currentStation;
-        }
-
-        // ====================================================================
-        //  ALUMNO VIEW
-        // ====================================================================
-        function renderEstacionAlumno() {
-            if (!currentUser || currentUser.role !== 'alumno') return;
-            const st = STATIONS.find(s => s.id === currentStation);
-            if (!st) {
-                estacionContenido.innerHTML = '<div class="waiting-msg">Estación no disponible.</div>';
-                return;
-            }
-
-            let miGrupo = null;
-            let miRol = null;
-            let grupoIndex = -1;
-            groups.forEach((g, idx) => {
-                const found = g.members.find(m => m.name === currentUser.name);
-                if (found) {
-                    miGrupo = g;
-                    miRol = found.role;
-                    grupoIndex = idx;
-                }
-            });
-
-            if (!miGrupo) {
-                estacionContenido.innerHTML = `
-                    <div class="waiting-msg">
-                        <span class="icon">⏳</span>
-                        <p>No estás asignado a ningún grupo para esta estación.</p>
-                        <p class="small">El docente debe generar los grupos.</p>
-                    </div>
-                `;
-                return;
-            }
-
-            const rolLabel = { paciente: 'Paciente (actor)', terapeuta: 'Terapeuta (residente)', observador: 'Observador (evaluador)' } [
-                miRol] || miRol;
-            let contenidoRol = '';
-
-            if (miRol === 'paciente') {
-                const actorHtml = st.actor.map(a => `<li>${a}</li>`).join('');
-                contenidoRol = `
-                    <div class="actorcard">
-                        <span class="tag">🔒 Confidencial — solo para el actor</span>
-                        <ul>${actorHtml}</ul>
-                    </div>
-                `;
-            } else if (miRol === 'terapeuta') {
-                contenidoRol = `
-                    <div class="box" style="margin-top:6px;">
-                        <h4>Contexto clínico</h4>
-                        <p>${st.context}</p>
-                    </div>
-                    <p class="small">🧑‍⚕️ Como terapeuta, utiliza el contexto y las 6 preguntas del L-RAMP. No tienes acceso a la ficha confidencial.</p>
-                `;
-            } else if (miRol === 'observador') {
-                let rubricHtml = '';
-                RUBRIC.forEach((cat) => {
-                    rubricHtml += `<div class="catname">${cat.cat}</div>`;
-                    cat.items.forEach((item, ii) => {
-                        const checked = (stationData[currentStation] && stationData[currentStation][grupoIndex] &&
-                            stationData[currentStation][grupoIndex].checked &&
-                            stationData[currentStation][grupoIndex].checked[ii]) ? 'checked' : '';
-                        rubricHtml +=
-                            `<label class="checkitem"><input type="checkbox" data-station="${currentStation}" data-group="${grupoIndex}" data-idx="${ii}" ${checked}><span>${item}</span></label>`;
-                    });
-                });
-                const done = (stationData[currentStation] && stationData[currentStation][grupoIndex] &&
-                    stationData[currentStation][grupoIndex].done) ? 'checked' : '';
-                contenidoRol = `
-                    <div class="checklist">
-                        <h4>Checklist de fidelidad al L-RAMP</h4>
-                        ${rubricHtml}
-                        <div class="scorewrap">
-                            <span class="scoretext">0%</span>
-                            <div class="scorebar"><div></div></div>
-                            <span class="scorelabel">completá los ítems observados</span>
-                        </div>
-                    </div>
-                    <label class="markdone" style="display:inline-flex;align-items:center;gap:6px;margin-top:10px;font-size:.8rem;cursor:pointer;">
-                        <input type="checkbox" class="markdone-check" data-station="${currentStation}" data-group="${grupoIndex}" ${done}>
-                        Marcar esta estación como practicada
-                    </label>
-                `;
-            }
-
-            const timeDisplay = timerSeconds > 0 ? `${Math.floor(timerSeconds/60)}:${(timerSeconds%60).toString().padStart(2,'0')}` :
-                '--:--';
-
-            estacionContenido.innerHTML = `
-                <div class="estacion-activa">
-                    <div class="badge ${st.difficulty}">${st.difficultyLabel}</div>
-                    <h2>Estación ${st.id} · ${st.title}</h2>
-                    <div class="grupo-alumno">Grupo ${grupoIndex+1} · Rol: <span class="rol-alumno ${miRol}">${rolLabel}</span></div>
-                    <div style="margin:6px 0;font-family:'Segoe UI',sans-serif;font-size:.85rem;background:var(--maroon-dark);color:#fff;padding:4px 12px;border-radius:6px;display:inline-block;">
-                        ⏱ Tiempo restante: <span id="alumno-timer">${timeDisplay}</span>
-                    </div>
-                    <div style="margin-top:10px;">
-                        ${contenidoRol}
-                    </div>
-                    <button class="togglebtn gold" style="margin-top:10px;">Ver clave de corrección (foco y disposición)</button>
-                    <div class="revealbox key-reveal" style="margin-top:4px;">
-                        <div class="keycard">
-                            <span class="tag">Clave de corrección</span>
-                            <p><b>Foco:</b> ${st.focus}</p>
-                            <p><b>Disposición esperada:</b> ${st.disposition}</p>
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            initChecklistEvents();
-            initMarkDoneEvents();
-            estacionContenido.querySelector('.togglebtn').addEventListener('click', (e) => {
-                e.stopPropagation();
-                const box = e.target.nextElementSibling;
-                box.classList.toggle('show');
-            });
-            if (miRol === 'observador') updateScoreAlumno();
-        }
-
-        // ====================================================================
-        //  CHECKLIST EVENTS
-        // ====================================================================
-        function initChecklistEvents() {
-            estacionContenido.querySelectorAll('.checklist input[type=checkbox]').forEach(cb => {
-                cb.removeEventListener('change', handleChecklistChange);
-                cb.addEventListener('change', handleChecklistChange);
-            });
-        }
-
-        function handleChecklistChange(e) {
-            const cb = e.target;
-            const stationId = parseInt(cb.dataset.station);
-            const groupIdx = parseInt(cb.dataset.group);
-            const idx = parseInt(cb.dataset.idx);
-            if (!stationData[stationId]) stationData[stationId] = {};
-            if (!stationData[stationId][groupIdx]) stationData[stationId][groupIdx] = { checked: [], done: false };
-            const data = stationData[stationId][groupIdx];
-            if (!data.checked) data.checked = [];
-            data.checked[idx] = cb.checked;
-            saveToStorage();
-            updateScoreAlumno();
-            updateProgressSummary();
-            setSyncStatus('Checklist actualizado', 'ok');
-        }
-
-        function updateScoreAlumno() {
-            const stationId = currentStation;
-            const groupIdx = groups.findIndex(g => g.members.some(m => m.name === currentUser.name));
-            if (groupIdx === -1) return;
-            const data = stationData[stationId] && stationData[stationId][groupIdx];
-            if (!data || !data.checked) return;
-            const checked = data.checked.filter(Boolean).length;
-            const total = RUBRIC.reduce((acc, cat) => acc + cat.items.length, 0);
-            const pct = total ? Math.round((checked / total) * 100) : 0;
-            const scorewrap = estacionContenido.querySelector('.scorewrap');
-            if (scorewrap) {
-                scorewrap.querySelector('.scoretext').textContent = pct + '%';
-                scorewrap.querySelector('.scorebar > div').style.width = pct + '%';
-                let label = 'a reforzar';
-                let color = 'var(--warn)';
-                if (pct >= 80) { label = 'sólido';
-                    color = 'var(--ok)'; } else if (pct >= 60) { label = 'adecuado';
-                    color = 'var(--levemod)'; }
-                scorewrap.querySelector('.scorebar > div').style.background = color;
-                scorewrap.querySelector('.scorelabel').textContent = checked + '/' + total + ' ítems — ' + label;
-            }
-        }
-
-        function initMarkDoneEvents() {
-            estacionContenido.querySelectorAll('.markdone-check').forEach(cb => {
-                cb.removeEventListener('change', handleMarkDoneChange);
-                cb.addEventListener('change', handleMarkDoneChange);
-            });
-        }
-
-        function handleMarkDoneChange(e) {
-            const cb = e.target;
-            const stationId = parseInt(cb.dataset.station);
-            const groupIdx = parseInt(cb.dataset.group);
-            if (!stationData[stationId]) stationData[stationId] = {};
-            if (!stationData[stationId][groupIdx]) stationData[stationId][groupIdx] = { checked: [], done: false };
-            stationData[stationId][groupIdx].done = cb.checked;
-            if (!stationData[stationId]._meta) stationData[stationId]._meta = {};
-            stationData[stationId]._meta.done = cb.checked;
-            saveToStorage();
-            updateProgressSummary();
-            setSyncStatus('Estación marcada como practicada', 'ok');
-        }
-
-        // ====================================================================
-        //  PROGRESS
-        // ====================================================================
-        function updateProgressSummary() {
-            if (!progressSummary) return;
-            let html = '';
-            STATIONS.forEach(st => {
-                const done = stationData[st.id] && stationData[st.id]._meta && stationData[st.id]._meta.done ? '✅' :
-                    '⏳';
-                html += `<span style="margin-right:8px;">Est.${st.id} ${done}</span>`;
-            });
-            html += `<br><span class="small">Alumnos: ${students.length} · Grupos: ${groups.length}</span>`;
-            progressSummary.innerHTML = html;
-        }
-
-        // ====================================================================
-        //  SYNC STATUS
-        // ====================================================================
-        function setSyncStatus(msg, type) {
-            if (syncStatus) {
-                syncStatus.textContent = '📌 ' + msg;
-                syncStatus.className = 'sync-status ' + (type || '');
-            }
-        }
-
-        // ====================================================================
-        //  EXPORT
-        // ====================================================================
-        function buildReportData() {
-            const rows = [];
-            STATIONS.forEach(st => {
-                const stData = stationData[st.id] || {};
-                const groupsData = Object.keys(stData).filter(k => k !== '_meta');
-                if (groupsData.length === 0) {
-                    rows.push([st.id, '-', '-', '0', '0%', 'No']);
-                } else {
-                    groupsData.forEach(gIdx => {
-                        const g = groups[parseInt(gIdx)] || { members: [] };
-                        const names = g.members.map(m => m.name).join('; ');
-                        const checked = stData[gIdx]?.checked || [];
-                        const total = RUBRIC.reduce((acc, cat) => acc + cat.items.length, 0);
-                        const done = checked.filter(Boolean).length;
-                        const pct = total ? Math.round((done / total) * 100) : 0;
-                        const completed = stData._meta?.done ? 'Sí' : 'No';
-                        rows.push([st.id, parseInt(gIdx) + 1, names, done + '/' + total, pct + '%', completed]);
-                    });
-                }
-            });
-            return rows;
-        }
-
-        function exportCSV() {
-            const rows = buildReportData();
-            let csv = 'Estación,Grupo,Integrantes,Ítems marcados,Porcentaje,Completada\n';
-            rows.forEach(row => { csv += row.join(',') + '\n'; });
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'reporte_ecoe_lram.csv';
-            a.click();
-            URL.revokeObjectURL(url);
-        }
-
-        function exportExcel() {
-            const rows = buildReportData();
-            let html = `<html><head><meta charset="UTF-8"></head><body><table border="1" cellpadding="4">`;
-            html += `<tr><th>Estación</th><th>Grupo</th><th>Integrantes</th><th>Ítems marcados</th><th>Porcentaje</th><th>Completada</th></tr>`;
-            rows.forEach(row => {
-                html +=
-                    `<tr><td>${row[0]}</td><td>${row[1]}</td><td>${row[2]}</td><td>${row[3]}</td><td>${row[4]}</td><td>${row[5]}</td></tr>`;
-            });
-            html += `</table></body></html>`;
-            const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'reporte_ecoe_lram.xls';
-            a.click();
-            URL.revokeObjectURL(url);
-        }
-
-        function exportPDF() {
-            window.print();
-        }
-
-        btnExportCSV.addEventListener('click', exportCSV);
-        btnExportExcel.addEventListener('click', exportExcel);
-        btnExportPDF.addEventListener('click', exportPDF);
-
-        // ====================================================================
-        //  GOOGLE SHEETS SYNC (opcional)
-        // ====================================================================
-        btnSyncGoogle.addEventListener('click', () => {
-            if (!GAS_URL) {
-                setSyncStatus('Sincronización con Google Sheets no configurada (GAS_URL vacío).', 'error');
-                return;
-            }
-            setSyncStatus('Sincronización con Google Sheets: pendiente de implementar (configurar GAS_URL).', '');
-        });
-
-        // ====================================================================
-        //  INIT
-        // ====================================================================
-        loadFromStorage();
-        console.log('ECOE L-RAMP - Clase práctica (contenido completo restaurado) cargada.');
-        console.log('Alumnos:', students.length);
-        console.log('Estación actual:', currentStation);
-    </script>
+    <script src="js/config.js"></script>
+    <script src="js/datos.js"></script>
+    <script src="js/estado.js"></script>
+    <script src="js/reporte.js"></script>
+    <script src="js/vistas.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/app.js"></script>
 </body>
 </html>
