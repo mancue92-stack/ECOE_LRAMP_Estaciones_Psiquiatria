@@ -88,7 +88,9 @@ var Vistas = (function () {
         var puedeGenerar = !enCurso && !(estado.fase !== 'espera' && estado.ronda >= estado.totalRondas);
         return '<div class="admin-panel"><h3><span>📋 Panel de control docente</span> <span class="badge-admin">Administrador</span></h3>' +
             '<p class="small">' + esc(cabeceraRonda(estado)) + '. Marca la asistencia, genera la ronda y controla el tiempo.</p>' +
-            '<div class="admin-row"><div class="col"><label>👥 Asistencia: ' + presentes + ' de ' + estado.alumnos.length + ' presentes</label>' +
+            '<div class="admin-row"><div class="col"><label>👥 Asistencia: <span id="contador-asistencia">' + presentes + '</span> de ' + estado.alumnos.length + ' presentes</label>' +
+            '<div style="margin-bottom:4px;"><button class="admin-btn small" data-accion="todos-presentes">✔ Marcar todos</button> ' +
+            '<button class="admin-btn outline small" data-accion="ninguno-presente">✖ Quitar todos</button></div>' +
             '<div id="lista-asistencia" style="max-height:260px;overflow-y:auto;">' + lista + '</div></div>' +
             '<div class="col"><label>⚙️ Configuración</label>' +
             '<div class="small">Rondas (1–7): <input type="number" data-config="rondas" min="1" max="7" value="' + estado.totalRondas + '" style="width:48px"' + (estado.fase === 'corriendo' ? ' disabled' : '') + '></div>' +
