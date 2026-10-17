@@ -76,6 +76,31 @@ var Vistas = (function () {
             '<div class="small">⏱ <span id="admin-timer-estacion"></span></div><div class="group-list">' + tarjetas + '</div></div>';
     }
 
+    // Catálogo completo de casos (solo docente y ayudante): incluye la ficha confidencial y la clave.
+    function htmlCasos(stations) {
+        var pendientes = stations.filter(function (s) { return s.pendienteValidacion; });
+        var aviso = pendientes.length
+            ? '<div class="notebanner"><b>⚠ Pendiente de validación clínica:</b> caso ' +
+              pendientes.map(function (s) { return s.id + ' (' + s.title + ')'; }).join(', ') +
+              '. Revísalo antes de usarlo con alumnos.</div>'
+            : '';
+        var tarjetas = stations.map(function (st) {
+            var etiqueta = st.pendienteValidacion
+                ? ' <span class="caso-pendiente">⚠ Pendiente de validación clínica</span>' : '';
+            return '<details class="card caso-detalle"' + (st.pendienteValidacion ? ' open' : '') + '>' +
+                '<summary><span class="badge ' + st.difficulty + '">' + st.difficultyLabel + '</span> ' +
+                '<b>Caso ' + st.id + ' · ' + st.title + '</b> — ' + st.subtitle + ' · ' + st.minutes + ' min' + etiqueta + '</summary>' +
+                '<div class="box" style="margin-top:8px;"><h4>Contexto clínico (lo lee el terapeuta)</h4><p>' + st.context + '</p></div>' +
+                '<div class="actorcard"><span class="tag">🔒 Ficha confidencial del paciente</span><ul>' +
+                st.actor.map(function (a) { return '<li>' + a + '</li>'; }).join('') + '</ul></div>' +
+                '<div class="keycard"><span class="tag">Clave de corrección</span><p><b>Foco:</b> ' + st.focus +
+                '</p><p><b>Disposición esperada:</b> ' + st.disposition + '</p></div></details>';
+        }).join('');
+        return '<div class="card"><div class="section-tag">Solo docente y ayudante</div><h2>Casos de la ECOE (' + stations.length + ')</h2>' +
+            '<p class="small">Contexto, ficha confidencial, foco y disposición esperada de cada caso. Los alumnos solo ven el caso que les toca.</p></div>' +
+            aviso + tarjetas;
+    }
+
     function htmlAdmin(estado, ms) {
         var presentes = estado.alumnos.filter(function (a) { return a.presente; }).length;
         var lista = estado.alumnos.map(function (a) {
@@ -152,7 +177,7 @@ var Vistas = (function () {
 
     return {
         esc: esc, etiquetaPuntaje: etiquetaPuntaje, htmlAlumno: htmlAlumno,
-        htmlParejas: htmlParejas, htmlAdmin: htmlAdmin, htmlEvaluacion: htmlEvaluacion
+        htmlParejas: htmlParejas, htmlAdmin: htmlAdmin, htmlEvaluacion: htmlEvaluacion, htmlCasos: htmlCasos
     };
 })();
 
