@@ -149,6 +149,8 @@
         $('app').style.display = 'block';
         activateTab(user.rol === 'docente' ? 'admin' : (user.rol === 'ayudante' ? 'evaluacion' : 'estacion'));
         guardarSesion();
+        // El catálogo con fichas confidenciales solo se dibuja para docente y ayudante.
+        $('casos-contenido').innerHTML = user.rol === 'alumno' ? '' : Vistas.htmlCasos(STATIONS);
         renderTodo();
     }
 
@@ -158,6 +160,7 @@
         guardarSesion();
         document.body.className = '';
         $('app').style.display = 'none';
+        $('casos-contenido').innerHTML = '';
         $('login-overlay').classList.remove('hidden');
         $('login-pass').value = '';
         $('login-error').textContent = mensaje || '';
