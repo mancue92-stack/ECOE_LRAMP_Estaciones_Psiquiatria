@@ -952,6 +952,9 @@
         /* ===== MULTIUSUARIO ===== */
         .show-docente-inline { display: none; }
         .rol-ayudante .solo-docente { display: none !important; }
+        .caso-detalle { margin-top: 10px; }
+        .caso-detalle summary { cursor: pointer; font-family: 'Segoe UI', sans-serif; font-size: .9rem; }
+        .caso-pendiente { display: inline-block; background: #b45309; color: #fff; border-radius: 6px; padding: 2px 8px; font-size: .75rem; font-weight: 700; }
         .eval-card { margin-top: 10px; }
         .eval-card textarea { font: inherit; padding: 6px; border: 1px solid var(--border); border-radius: 6px; }
         .admin-btn[disabled] { opacity: .45; cursor: not-allowed; }
@@ -1017,6 +1020,7 @@
                 <button class="tabbtn" data-target="estacion">📍 Estación actual</button>
                 <button class="tabbtn show-docente-inline solo-docente" data-target="admin">📋 Panel docente</button>
                 <button class="tabbtn show-docente-inline" data-target="evaluacion">📝 Evaluación</button>
+                <button class="tabbtn show-docente-inline" data-target="casos">📚 Casos</button>
                 <button class="tabbtn show-docente-inline" data-target="rubrica">Rúbrica de evaluación</button>
                 <button class="tabbtn" data-target="cierre">Cierre y referencias</button>
             </div>
@@ -1252,6 +1256,11 @@
             <!-- ==================== EVALUACIÓN (DOCENTE Y AYUDANTE) ==================== -->
             <section id="evaluacion" class="view">
                 <div id="evaluacion-contenido"></div>
+            </section>
+
+            <!-- ==================== CASOS (DOCENTE Y AYUDANTE) ==================== -->
+            <section id="casos" class="view">
+                <div id="casos-contenido"></div>
             </section>
 
             <!-- ==================== RÚBRICA ==================== -->
